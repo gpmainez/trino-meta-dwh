@@ -1,0 +1,13 @@
+meta_dwh:
+  target: dev
+  outputs:
+    dev:
+      type: trino
+      method: none
+      user: dbt_user
+      host: "{{ env_var('TRINO_HOST', 'localhost') }}"
+      port: "{{ env_var('TRINO_PORT', '8080') | int }}"
+      database: "{{ env_var('TRINO_CATALOG', 'iceberg') }}"
+      schema: "{{ env_var('TRINO_SCHEMA', 'meta_dwh') }}"
+      threads: 4
+      client_tags: ["dbt", "meta_dwh"]

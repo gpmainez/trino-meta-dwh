@@ -1,0 +1,41 @@
+name: 'meta_dwh'
+version: '1.0.0'
+config-version: 2
+
+# Profile defined in ~/.dbt/profiles.yml
+profile: 'meta_dwh'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+seeds:
+  meta_dwh:
+    +schema: core
+    seed_user_teams:
+      +column_types:
+        user_name: varchar
+        team_name: varchar
+        department: varchar
+        cost_center: varchar
+
+models:
+  meta_dwh:
+    # Staging layer: Views over raw Iceberg source tables, focused on cleaning and normalization
+    staging:
+      +schema: staging
+      +materialized: view
+    
+    # Core layer: Dimensional model (Kimball) materialized as Apache Iceberg tables
+    core:
+      +schema: core
+      +materialized: incremental
+      +properties:
+        format: "'ICEBERG'"
