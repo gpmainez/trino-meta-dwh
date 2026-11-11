@@ -1,0 +1,79 @@
+version: 2
+
+models:
+  - name: stg_raw_trino_events
+    description: "Normalized staging view of raw Trino query completion events at query grain (1 row = 1 query execution)."
+    columns:
+      - name: query_id
+        description: "Unique query execution identifier."
+        tests:
+          - not_null
+          - unique
+
+      - name: user_name
+        description: "Normalized lowercase username of the query initiator."
+        tests:
+          - not_null
+
+      - name: query_state
+        description: "Filtered terminal execution state (always 'FINISHED')."
+        tests:
+          - not_null
+
+      - name: cpu_time_ms
+        description: "Total CPU time consumed across all workers in milliseconds."
+        tests:
+          - not_null
+
+      - name: bytes_scanned
+        description: "Total storage bytes read by the query."
+        tests:
+          - not_null
+
+      - name: start_time
+        description: "Timestamp when the query started execution."
+        tests:
+          - not_null
+
+      - name: execution_date
+        description: "Date derived from start_time, used for Iceberg partition pruning."
+        tests:
+          - not_null
+
+      - name: tables_queried_count
+        description: "Cardinality of tables array, used to determine cost allocation denominator."
+        tests:
+          - not_null
+
+  - name: stg_raw_trino_event_tables
+    description: "Normalized staging view of unnested tables queried per execution (1 row = 1 query x 1 table)."
+    columns:
+      - name: query_id
+        description: "Query execution identifier (foreign key to stg_raw_trino_events)."
+        tests:
+          - not_null
+
+      - name: table_key
+        description: "MD5 surrogate key representing unique catalog.schema.table identifier."
+        tests:
+          - not_null
+
+      - name: full_table_name
+        description: "Fully qualified table name (catalog.schema.table)."
+        tests:
+          - not_null
+
+      - name: cost_allocation_factor
+        description: "Fractional weight (1.0 / tables_queried_count) for proportional cost attribution."
+        tests:
+          - not_null
+
+      - name: allocated_cpu_time_ms
+        description: "Proportionally attributed CPU time (cpu_time_ms / N)."
+        tests:
+          - not_null
+
+      - name: allocated_bytes_scanned
+        description: "Proportionally attributed bytes scanned (bytes_scanned / N)."
+        tests:
+          - not_null
