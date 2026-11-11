@@ -1,0 +1,125 @@
+version: 2
+
+models:
+  - name: dim_user
+    description: "User dimension table mapping Trino users to organizational teams, departments, and cost centers."
+    columns:
+      - name: user_key
+        description: "MD5 surrogate key representing unique user."
+        tests:
+          - not_null
+          - unique
+
+      - name: user_name
+        description: "Unique username / principal."
+        tests:
+          - not_null
+
+      - name: team_name
+        description: "Assigned business or technical team (e.g. Marketing Analytics, Risk Modeling)."
+        tests:
+          - not_null
+
+  - name: dim_table
+    description: "Table dimension cataloging all database tables referenced in queries on the Trino cluster."
+    columns:
+      - name: table_key
+        description: "MD5 surrogate key derived from catalog, schema, and table name."
+        tests:
+          - not_null
+          - unique
+
+      - name: full_table_name
+        description: "Fully qualified table name in catalog.schema.table format."
+        tests:
+          - not_null
+
+      - name: first_queried_at
+        description: "Timestamp of the earliest recorded query accessing this table."
+        tests:
+          - not_null
+
+      - name: last_queried_at
+        description: "Timestamp of the most recent query accessing this table."
+        tests:
+          - not_null
+
+  - name: fact_query_execution
+    description: "Fact table recording query executions at query grain (1 row = 1 query execution) for cluster capacity and team cost tracking."
+    columns:
+      - name: query_id
+        description: "Unique query execution identifier."
+        tests:
+          - not_null
+          - unique
+
+      - name: user_key
+        description: "Foreign key to dim_user."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_user')
+                field: user_key
+
+      - name: cpu_time_ms
+        description: "Total CPU time across all workers in milliseconds (non-duplicated)."
+        tests:
+          - not_null
+
+      - name: bytes_scanned
+        description: "Total physical bytes scanned from storage."
+        tests:
+          - not_null
+
+      - name: execution_date
+        description: "Partitioning date column for Iceberg hidden partitioning."
+        tests:
+          - not_null
+
+  - name: fact_table_usage
+    description: "Fact table recording table-level resource consumption (1 row = 1 query x 1 table) with 1/N proportional cost allocation."
+    columns:
+      - name: usage_id
+        description: "Surrogate primary key derived from query_id and table_key."
+        tests:
+          - not_null
+          - unique
+
+      - name: query_id
+        description: "Reference to query execution."
+        tests:
+          - not_null
+
+      - name: table_key
+        description: "Foreign key to dim_table."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_table')
+                field: table_key
+
+      - name: user_key
+        description: "Foreign key to dim_user."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_user')
+                field: user_key
+
+      - name: cost_allocation_factor
+        description: "Proportional factor (1.0 / N) used to distribute query costs among referenced tables."
+        tests:
+          - not_null
+
+      - name: allocated_cpu_time_ms
+        description: "Proportionally attributed CPU time for this table."
+        tests:
+          - not_null
+
+      - name: allocated_bytes_scanned
+        description: "Proportionally attributed bytes scanned for this table."
+        tests:
+          - not_null
