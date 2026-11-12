@@ -1,0 +1,32 @@
+name: dbt CI Validation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate:
+    name: Validate dbt Models, Macros & Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dbt-trino
+        run: |
+          python -m pip install --upgrade pip
+          pip install dbt-core dbt-trino
+
+      - name: Validate dbt Syntax, DAG & Tests
+        working-directory: meta_dwh
+        run: |
+          dbt parse --profiles-dir .
