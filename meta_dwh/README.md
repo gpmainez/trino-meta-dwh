@@ -165,7 +165,9 @@ To elevate the Meta DWH from basic observability to a full-fledged enterprise Fi
   )
   ```
 * **How It Would Be Used:**
-  $$\text{allocated\_cost\_usd} = \left(\frac{\text{cpu\_time\_ms}}{3\,600\,000}\right) \times \text{hourly\_rate\_usd}$$
+  ```text
+  allocated_cost_usd = (cpu_time_ms / 3600000.0) * hourly_rate_usd
+  ```
   Allows direct financial chargeback reports per team and per table.
 
 ### C. Data Catalog & Governance Metadata (e.g. DataHub / Apache Atlas)
