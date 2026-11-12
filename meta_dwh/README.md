@@ -51,13 +51,13 @@ The platform processes telemetry emitted by Trino's `EventListener` (`QueryCompl
 | Layer | Model Name | Materialization | Grain | Description |
 | :--- | :--- | :--- | :--- | :--- |
 | **Source** | `raw_trino_events` | Iceberg (S3) | 1 query completion | Raw append-only telemetry events from Trino Coordinator. |
-| **Staging** | `stg_raw_trino_events` | View | 1 query execution | Filters `FINISHED`, types metrics, derives `execution_date` and `tables_queried_count`. |
+| **Staging** | `stg_raw_trino_events` | View | 1 query execution | Captures all executions (`FINISHED`, `FAILED`), derives `is_successful`, types metrics, derives `execution_date` and `tables_queried_count`. |
 | **Staging** | `stg_raw_trino_event_tables` | View | 1 query x 1 referenced table | Unnests `tables`, parses catalog/schema/table, and computes 1/N cost factor. |
 | **Core Dim** | `dim_user` | Table (Iceberg) | 1 user x temporal validity | SCD Type 2 mapping users to teams over time (`valid_from`, `valid_to`) with fallback `__UNKNOWN_USER__`. |
 | **Core Dim** | `dim_table` | Incremental (Iceberg) | 1 unique table | Catalog of all referenced tables with lifetime query counts and `first_seen`/`last_seen` timestamps. |
-| **Core Fact** | `fact_query_execution` | Incremental (Iceberg) | 1 query execution | Source of truth for cluster compute/memory; **zero double-counting** when aggregating. |
-| **Core Fact** | `fact_table_usage` | Incremental (Iceberg) | 1 query x 1 referenced table | Table-level cost attribution using proportional (1/N) metrics. |
-| **Marts** | `mart_daily_team_usage` | Incremental (Iceberg) | 1 day x 1 team | Pre-aggregated daily metrics for instant FinOps dashboard chargeback and SLA tracking. |
+| **Core Fact** | `fact_query_execution` | Incremental (Iceberg) | 1 query execution | Source of truth for cluster compute/memory; **zero double-counting** when aggregating. Employs 3-day lookback buffer for late-arriving events. |
+| **Core Fact** | `fact_table_usage` | Incremental (Iceberg) | 1 query x 1 referenced table | Table-level cost attribution using proportional (1/N) metrics with 3-day lookback buffer. |
+| **Marts** | `mart_daily_team_usage` | Incremental (Iceberg) | 1 day x 1 team | Pre-aggregated daily metrics for instant FinOps dashboard chargeback, SLA tracking, and Wasted Compute (`wasted_cpu_hours`, `wasted_cpu_percentage`). |
 | **Marts** | `mart_daily_table_usage` | Incremental (Iceberg) | 1 day x 1 table | Daily table usage with native Trino HyperLogLog (HLL) sketches for non-additive distinct user rollups. |
 
 ---
@@ -78,7 +78,7 @@ The platform processes telemetry emitted by Trino's `EventListener` (`QueryCompl
 
 ### B. Apache Iceberg on Amazon S3
 * **ACID Transactions & Snapshot Isolation:** Prevents dirty reads and corrupted writes during concurrent pipeline execution.
-* **Incremental Merge Strategy:** Both fact tables and `dim_table` utilize `incremental_strategy = 'merge'`. On incremental runs, only new events (`start_time > (select max(start_time) from {{ this }})`) are processed, ensuring full idempotency.
+* **Incremental Merge Strategy with 3-Day Lookback Buffer:** Both fact tables and marts utilize `incremental_strategy = 'merge'`. On incremental runs, queries within a 3-day lookback buffer (`execution_date >= max(execution_date) - interval '3' day`) are re-evaluated against the staging layer. Combined with deterministic `unique_key` constraints (`query_id`, `usage_id`), this guarantees zero duplicate rows while preventing late-arriving telemetry and long-running queries from being dropped.
 * **Hidden Partitioning:** Tables are partitioned by `day(execution_date)`. Trino applies partition pruning directly without requiring manual partition column transformations.
 
 ### C. User-to-Team Attribution (HR Dimension)
@@ -223,29 +223,32 @@ Incremental Merge Runtime (1-day):   [██] 1 min 18 s (Delta processing only)
 ---
 
 ## 6. Running the Project & Local Deployment
-
+ 
 ### Local Multi-Container Stack (Docker Compose)
-A complete local environment featuring **Trino Coordinator** + **MinIO S3 Object Storage** is provided in `docker-compose.yml`:
-
+A complete local environment featuring **Trino Coordinator** + **Apache Iceberg REST Catalog** + **MinIO S3 Object Storage** is provided in `docker-compose.yml`:
+ 
 ```bash
-# Start local Trino and S3-compatible MinIO
+# 1. Start local Trino, Iceberg REST Catalog, and S3-compatible MinIO
 docker compose up -d
 
-# Verify Trino cluster is ready at http://localhost:8080
+# 2. Ingest realistic mock telemetry (creates iceberg.events.raw_trino_events)
+python scripts/generate_mock_events.py --count 1500 --days 14
 ```
-
+ 
 ### dbt Pipeline Execution
-
+ 
 ```bash
+cd meta_dwh
+
 # 1. Parse and validate project syntax
 dbt parse --profiles-dir .
 
-# 2. Load HR reference seed data
+# 2. Load HR reference seed data (SCD2 mapping)
 dbt seed --profiles-dir .
 
 # 3. Execute incremental models
 dbt run --profiles-dir .
 
-# 4. Run data quality and relational integrity tests (46 automated tests)
+# 4. Run data quality and relational integrity tests (57 automated tests)
 dbt test --profiles-dir .
 ```
