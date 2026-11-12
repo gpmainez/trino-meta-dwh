@@ -268,3 +268,36 @@ group by
     team_name,
     department;
 ```
+
+---
+
+## 8. Zaawansowane Metryki FinOps: Parallelism Factor
+
+W pliku `analyses/query_efficiency_finops.sql` wprowadziliśmy wskaźnik efektywności wielordzeniowej klastra:
+```text
+parallelism_factor = cpu_time_ms / duration_ms
+```
+* **Co to mierzy:** Średnią liczbę rdzeni procesora, które aktywnie pracowały nad zapytaniem w danej jednostce czasu.
+* **Dlaczego to kluczowe dla platformy:**
+  - `parallelism_factor >= 8.0`: Zapytanie doskonale zrównoleglone na workerach Trino MPP.
+  - `parallelism_factor ≈ 1.0` przy dużym zużyciu CPU: **Wąskie gardło sekwencyjne**. Analityk napisał zapytanie, które zablokowało jeden rdzeń na jednej maszynie (np. brak partycjonowania, nieoptymalny join), blokując kolejkę klastra.
+
+---
+
+## 9. Środowisko DevOps: CI/CD i Docker Compose
+
+### A. GitHub Actions CI Pipeline (`.github/workflows/ci.yml`)
+* **Dlaczego to istnieje:** Zapobiega wrzucaniu zepsutego kodu na produkcję.
+* **Jak działa:** Przy każdym `git push` na gałąź `main`:
+  1. GitHub uruchamia kontener Ubuntu.
+  2. Instaluje środowisko `Python 3.12` oraz `dbt-core` i `dbt-trino`.
+  3. Wykonuje komendę `dbt parse --profiles-dir .`, weryfikując składnię wszystkich modeli, makr i 46 testów relacyjnych YAML.
+  4. Sukces skutkuje zielonym odznaczeniem statusu `Build Passing` na profilu repozytorium.
+
+### B. Lokalny Stack Kontenerowy (`docker-compose.yml`)
+* **Komponenty:**
+  1. **Trino Coordinator** (port `8080`): Główny silnik SQL ze skonfigurowanym katalogiem Iceberga (`iceberg.properties`).
+  2. **MinIO** (porty `9000` API, `9001` Konsola Web): Lokalna emulacja pamięci masowej AWS S3.
+  3. **MinIO Client (`mc`)**: Automatycznie tworzy bucket `warehouse` na S3 przy starcie środowiska.
+* **Uruchomienie:**
+  Wystarczy jedna komenda: `docker compose up -d`, aby postawić lokalne środowisko Lakehouse i testować modele dbt bez konieczności płacenia za chmurę AWS.
