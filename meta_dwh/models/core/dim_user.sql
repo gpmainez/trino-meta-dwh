@@ -22,6 +22,7 @@ query_users as (
 combined_users as (
     -- Combine HR users with any active Trino users not yet registered in HR
     select
+    --Beacuse full join we have to deal with null values
         coalesce(hr.user_name, qu.user_name) as user_name,
         coalesce(hr.team_name, 'Unassigned / Service Account') as team_name,
         coalesce(hr.department, 'Unassigned Department') as department,
@@ -32,7 +33,7 @@ combined_users as (
             else false
         end as is_service_account
     from hr_users as hr
-    full outer join query_users as qu
+    full join query_users as qu
         on hr.user_name = qu.user_name
 ),
 

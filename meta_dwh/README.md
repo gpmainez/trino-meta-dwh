@@ -127,7 +127,55 @@ Provides week-over-week growth metrics (`wow_cpu_growth_pct`, active user counts
 
 ---
 
-## 4. Running the Project
+## 4. Additional Metadata Requirements & Proposed Schemas
+
+To elevate the Meta DWH from basic observability to a full-fledged enterprise FinOps and Data Governance platform, the following three additional metadata sources are specified:
+
+### A. Enterprise Directory / HR Metadata (Implemented via `seed_user_teams.csv`)
+* **Purpose:** Solves the identity-to-organization gap. Trino logs capture only system usernames (`user_name`); HR metadata maps them to organizational structures and financial cost centers.
+* **Schema:**
+  ```sql
+  (
+      user_name    VARCHAR PRIMARY KEY, -- e.g. 'jkowalski'
+      team_name    VARCHAR NOT NULL,    -- e.g. 'Marketing Analytics'
+      department   VARCHAR NOT NULL,    -- e.g. 'Marketing'
+      cost_center  VARCHAR NOT NULL     -- e.g. 'CC-101'
+  )
+  ```
+* **Usage in Model:** Enriches `dim_user` and propagates dimensions into `fact_query_execution` and `fact_table_usage` for departmental chargeback.
+
+### B. Cloud Infrastructure & Unit Cost Metadata (AWS CUR / Instance Rates)
+* **Purpose:** Converts abstract compute units (`cpu_time_ms`) into actual financial dollars (\$ USD) for CFO cost attribution.
+* **Proposed Schema (`dim_cluster_rate`):**
+  ```sql
+  (
+      cluster_id          VARCHAR PRIMARY KEY, -- e.g. 'trino-prod-eu-west-1'
+      ec2_instance_type   VARCHAR NOT NULL,    -- e.g. 'r6i.4xlarge'
+      hourly_rate_usd     DECIMAL(10, 4),      -- e.g. 1.0080 USD/hr
+      effective_start_date DATE NOT NULL,
+      effective_end_date   DATE
+  )
+  ```
+* **How It Would Be Used:**
+  $$\text{allocated\_cost\_usd} = \left(\frac{\text{cpu\_time\_ms}}{3\,600\,000}\right) \times \text{hourly\_rate\_usd}$$
+  Allows direct financial chargeback reports per team and per table.
+
+### C. Data Catalog & Governance Metadata (e.g. DataHub / Apache Atlas)
+* **Purpose:** Classifies tables by sensitivity, business tier, and technical ownership.
+* **Proposed Schema (`dim_table_governance`):**
+  ```sql
+  (
+      table_key            VARCHAR PRIMARY KEY, -- MD5 surrogate key matching dim_table
+      data_classification  VARCHAR NOT NULL,    -- 'CONFIDENTIAL_PII', 'INTERNAL', 'PUBLIC'
+      table_owner_email    VARCHAR NOT NULL,    -- 'lead_engineer@company.com'
+      lifecycle_tier       VARCHAR NOT NULL     -- 'PRODUCTION', 'STAGING', 'DEPRECATED'
+  )
+  ```
+* **How It Would Be Used:** Identifies abandoned/deprecated tables that continue to consume compute resources, as well as tracking regulatory compliance (e.g. who accessed PII tables).
+
+---
+
+## 5. Running the Project
 
 ```bash
 # 1. Parse and validate project syntax
