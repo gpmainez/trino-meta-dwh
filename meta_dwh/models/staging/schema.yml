@@ -16,7 +16,12 @@ models:
           - not_null
 
       - name: query_state
-        description: "Filtered terminal execution state (always 'FINISHED')."
+        description: "Terminal execution state (FINISHED, FAILED, USER_CANCELED, etc.)."
+        tests:
+          - not_null
+
+      - name: is_successful
+        description: "Boolean indicator whether the query completed successfully (query_state = 'FINISHED')."
         tests:
           - not_null
 

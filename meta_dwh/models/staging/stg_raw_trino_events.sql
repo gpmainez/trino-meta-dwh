@@ -7,6 +7,7 @@ renamed_and_filtered as (
         query_id,
         lower(trim(user_name)) as user_name,
         query_state,
+        case when query_state = 'FINISHED' then true else false end as is_successful,
         cast(cpu_time_ms as bigint) as cpu_time_ms,
         cast(wall_time_ms as bigint) as wall_time_ms,
         cast(bytes_scanned as bigint) as bytes_scanned,
@@ -17,7 +18,7 @@ renamed_and_filtered as (
         coalesce(tables, array[]) as tables,
         coalesce(cardinality(tables), 0) as tables_queried_count
     from source_data
-    where query_state = 'FINISHED'
+    where cpu_time_ms is not null and cpu_time_ms >= 0
 )
 
 select * from renamed_and_filtered

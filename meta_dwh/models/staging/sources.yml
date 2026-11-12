@@ -4,7 +4,7 @@ sources:
   - name: trino_source
     description: "Raw events emitted by Trino EventListener (QueryCompletedEvent) and stored as Apache Iceberg on Amazon S3."
     schema: "{{ var('raw_schema', 'events') }}"
-    database: "{{ var('raw_catalog', 'iceberg_raw') }}"
+    database: "{{ var('raw_catalog', 'iceberg') }}"
     tables:
       - name: raw_trino_events
         description: "Append-only raw telemetry data containing query execution details, resource consumption, and referenced tables."

@@ -11,7 +11,8 @@
 with staging_events as (
     select * from {{ ref('stg_raw_trino_events') }}
     {% if is_incremental() %}
-        where start_time > (select coalesce(max(start_time), timestamp '1970-01-01 00:00:00 UTC') from {{ this }})
+        -- 3-day lookback window prevents late-arriving telemetry and long-running queries from being dropped
+        where execution_date >= (select coalesce(max(execution_date) - interval '3' day, date '1970-01-01') from {{ this }})
     {% endif %}
 ),
 
@@ -24,6 +25,8 @@ final as (
         events.query_id,
         coalesce(u.user_key, '__UNKNOWN_USER__') as user_key,
         events.user_name,
+        events.query_state,
+        events.is_successful,
         coalesce(u.team_name, 'Unassigned / Service Account') as team_name,
         coalesce(u.department, 'Unassigned Department') as department,
         coalesce(u.cost_center, 'CC-UNASSIGNED') as cost_center,

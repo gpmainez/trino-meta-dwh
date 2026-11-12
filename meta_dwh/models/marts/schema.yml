@@ -25,10 +25,28 @@ models:
         tests:
           - not_null
 
-      - name: total_cpu_hours
-        description: "Total non-duplicated CPU hours consumed."
+      - name: successful_queries
+        description: "Count of successfully finished queries."
         tests:
           - not_null
+
+      - name: failed_queries
+        description: "Count of failed or canceled queries."
+        tests:
+          - not_null
+
+      - name: total_cpu_hours
+        description: "Total non-duplicated CPU hours consumed across all worker nodes."
+        tests:
+          - not_null
+
+      - name: wasted_cpu_hours
+        description: "CPU hours wasted on failed or canceled queries (FinOps loss metric)."
+        tests:
+          - not_null
+
+      - name: wasted_cpu_percentage
+        description: "Percentage of total team compute consumed by failed queries."
 
   - name: mart_daily_table_usage
     description: "Daily aggregated mart of table access metrics featuring HyperLogLog (HLL) sketches for non-additive distinct user rollups."

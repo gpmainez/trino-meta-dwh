@@ -11,7 +11,8 @@
 with staging_table_events as (
     select * from {{ ref('stg_raw_trino_event_tables') }}
     {% if is_incremental() %}
-        where start_time > (select coalesce(max(start_time), timestamp '1970-01-01 00:00:00 UTC') from {{ this }})
+        -- 3-day lookback window prevents late-arriving telemetry from being dropped
+        where execution_date >= (select coalesce(max(execution_date) - interval '3' day, date '1970-01-01') from {{ this }})
     {% endif %}
 ),
 

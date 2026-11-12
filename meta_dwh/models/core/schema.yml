@@ -62,6 +62,16 @@ models:
                 to: ref('dim_user')
                 field: user_key
 
+      - name: query_state
+        description: "Terminal execution status (FINISHED, FAILED, USER_CANCELED)."
+        tests:
+          - not_null
+
+      - name: is_successful
+        description: "Boolean indicator whether query completed successfully without runtime error."
+        tests:
+          - not_null
+
       - name: cpu_time_ms
         description: "Total CPU time across all workers in milliseconds (non-duplicated)."
         tests:
