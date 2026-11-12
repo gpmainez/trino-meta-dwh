@@ -1,6 +1,6 @@
 # Trino Meta DWH – Lakehouse Observability & FinOps Platform
 
-[![dbt CI Validation](https://github.com/gpmainez/trino-meta-dwh/actions/workflows/ci.yml/badge.svg)](https://github.com/gpmainez/trino-meta-dwh/actions/workflows/ci.yml)
+[![dbt CI Validation](https://github.com/gpmainez/trino-meta-dwh/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gpmainez/trino-meta-dwh/actions/workflows/ci.yml)
 ![Table Format: Iceberg](https://img.shields.io/badge/Table%20Format-Apache%20Iceberg-blue?logo=apache)
 ![Engine: Trino](https://img.shields.io/badge/Engine-Trino-coral?logo=trino)
 ![Framework: dbt-core](https://img.shields.io/badge/Framework-dbt--trino-orange?logo=dbt)
