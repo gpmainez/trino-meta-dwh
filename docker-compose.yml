@@ -14,13 +14,8 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 3s
-      timeout: 3s
-      retries: 5
 
-  # 2. MinIO Init: Automatically create the required S3 bucket
+  # 2. MinIO Init: Automatically create the required 'warehouse' bucket
   mc:
     image: minio/mc:RELEASE.2024-05-09T17-04-24Z
     container_name: trino_mc
@@ -34,12 +29,12 @@ services:
       exit 0;
       "
 
-  # 3. Iceberg REST Catalog: Industry-standard catalog service for Iceberg tables
+  # 3. Iceberg REST Catalog: Community-standard catalog fixture for Apache Iceberg
   iceberg-rest:
-    image: apache/iceberg-rest-fixture:1.6.0
+    image: apache/iceberg-rest-fixture:latest
     container_name: trino_iceberg_rest
     depends_on:
-      - mc
+      - minio
     environment:
       AWS_ACCESS_KEY_ID: admin
       AWS_SECRET_ACCESS_KEY: password123
@@ -47,11 +42,11 @@ services:
       CATALOG_WAREHOUSE: s3://warehouse/
       CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
       CATALOG_S3_ENDPOINT: http://minio:9000
-      CATALOG_S3_PATH__STYLE__ACCESS: "true"
+      CATALOG_S3_PATH_STYLE_ACCESS: "true"
     ports:
       - "8181:8181"
 
-  # 4. Trino Coordinator: Distributed Query Engine with native Iceberg REST Connector
+  # 4. Trino Coordinator: Distributed Query Engine with Iceberg REST Connector
   trino:
     image: trinodb/trino:446
     container_name: trino_coordinator
