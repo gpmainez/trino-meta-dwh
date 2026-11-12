@@ -1,0 +1,69 @@
+version: 2
+
+models:
+  - name: mart_daily_team_usage
+    description: "Daily aggregated mart of team compute, duration, memory and query metrics for executive FinOps reporting."
+    columns:
+      - name: mart_id
+        description: "Primary key surrogate derived from usage_date, team_name and department."
+        tests:
+          - not_null
+          - unique
+
+      - name: usage_date
+        description: "Aggregation partition date."
+        tests:
+          - not_null
+
+      - name: team_name
+        description: "Team name attributed at query execution time via SCD2 history."
+        tests:
+          - not_null
+
+      - name: total_queries
+        description: "Total queries executed by this team on this date."
+        tests:
+          - not_null
+
+      - name: total_cpu_hours
+        description: "Total non-duplicated CPU hours consumed."
+        tests:
+          - not_null
+
+  - name: mart_daily_table_usage
+    description: "Daily aggregated mart of table access metrics featuring HyperLogLog (HLL) sketches for non-additive distinct user rollups."
+    columns:
+      - name: mart_id
+        description: "Primary key surrogate derived from usage_date and table_key."
+        tests:
+          - not_null
+          - unique
+
+      - name: usage_date
+        description: "Aggregation partition date."
+        tests:
+          - not_null
+
+      - name: table_key
+        description: "Foreign key to dim_table."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_table')
+                field: table_key
+
+      - name: full_table_name
+        description: "Fully qualified table name (catalog.schema.table)."
+        tests:
+          - not_null
+
+      - name: exact_distinct_users_count
+        description: "Exact count of distinct users for this single day."
+        tests:
+          - not_null
+
+      - name: hll_users_sketch
+        description: "Native Trino HyperLogLog sketch (approx_set) enabling arbitrary multi-day distinct user rollups via cardinality(merge(cast(hll_users_sketch as HyperLogLog)))."
+        tests:
+          - not_null

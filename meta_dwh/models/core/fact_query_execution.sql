@@ -39,6 +39,8 @@ final as (
     from staging_events as events
     left join users as u
         on events.user_name = u.user_name
+       and events.start_time >= u.valid_from
+       and events.start_time <= u.valid_to
 )
 
 select * from final

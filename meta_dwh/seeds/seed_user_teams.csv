@@ -1,9 +1,10 @@
-user_name,team_name,department,cost_center
-jkowalski,Marketing Analytics,Marketing,CC-101
-anowak,Risk Modeling,Risk & Compliance,CC-202
-pwisniewski,Data Platform,Engineering,CC-303
-mzielinska,Finance Reporting,Finance,CC-404
-akozlowski,Data Science,AI & Analytics,CC-505
-kszymanski,Marketing Analytics,Marketing,CC-101
-mlasocka,Product Analytics,Product,CC-606
-kwojcik,Risk Modeling,Risk & Compliance,CC-202
+user_name,team_name,department,cost_center,valid_from,valid_to
+jkowalski,Marketing Analytics,Marketing,CC-101,2026-01-01 00:00:00 UTC,2026-10-15 23:59:59 UTC
+jkowalski,Product Analytics,Product,CC-606,2026-10-16 00:00:00 UTC,2099-12-31 23:59:59 UTC
+anowak,Risk Modeling,Risk & Compliance,CC-202,2026-01-01 00:00:00 UTC,2099-12-31 23:59:59 UTC
+pwisniewski,Data Platform,Engineering,CC-303,2026-01-01 00:00:00 UTC,2099-12-31 23:59:59 UTC
+mzielinska,Finance Reporting,Finance,CC-404,2026-01-01 00:00:00 UTC,2099-12-31 23:59:59 UTC
+akozlowski,Data Science,AI & Analytics,CC-505,2026-01-01 00:00:00 UTC,2099-12-31 23:59:59 UTC
+kszymanski,Marketing Analytics,Marketing,CC-101,2026-01-01 00:00:00 UTC,2099-12-31 23:59:59 UTC
+mlasocka,Product Analytics,Product,CC-606,2026-01-01 00:00:00 UTC,2099-12-31 23:59:59 UTC
+kwojcik,Risk Modeling,Risk & Compliance,CC-202,2026-01-01 00:00:00 UTC,2099-12-31 23:59:59 UTC

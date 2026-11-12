@@ -25,6 +25,8 @@ seeds:
         team_name: varchar
         department: varchar
         cost_center: varchar
+        valid_from: timestamp with time zone
+        valid_to: timestamp with time zone
 
 models:
   meta_dwh:
@@ -36,6 +38,13 @@ models:
     # Core layer: Dimensional model (Kimball) materialized as Apache Iceberg tables
     core:
       +schema: core
+      +materialized: incremental
+      +properties:
+        format: "'ICEBERG'"
+
+    # Marts layer: Aggregated dimensional marts for low-latency BI dashboards and HLL sketch metrics
+    marts:
+      +schema: marts
       +materialized: incremental
       +properties:
         format: "'ICEBERG'"

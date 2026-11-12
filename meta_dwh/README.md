@@ -53,10 +53,12 @@ The platform processes telemetry emitted by Trino's `EventListener` (`QueryCompl
 | **Source** | `raw_trino_events` | Iceberg (S3) | 1 query completion | Raw append-only telemetry events from Trino Coordinator. |
 | **Staging** | `stg_raw_trino_events` | View | 1 query execution | Filters `FINISHED`, types metrics, derives `execution_date` and `tables_queried_count`. |
 | **Staging** | `stg_raw_trino_event_tables` | View | 1 query x 1 referenced table | Unnests `tables`, parses catalog/schema/table, and computes 1/N cost factor. |
-| **Core Dim** | `dim_user` | Table (Iceberg) | 1 user | Combines HR seed with auto-discovered Trino principals; includes synthetic `__UNKNOWN_USER__` fallback. |
+| **Core Dim** | `dim_user` | Table (Iceberg) | 1 user x temporal validity | SCD Type 2 mapping users to teams over time (`valid_from`, `valid_to`) with fallback `__UNKNOWN_USER__`. |
 | **Core Dim** | `dim_table` | Incremental (Iceberg) | 1 unique table | Catalog of all referenced tables with lifetime query counts and `first_seen`/`last_seen` timestamps. |
 | **Core Fact** | `fact_query_execution` | Incremental (Iceberg) | 1 query execution | Source of truth for cluster compute/memory; **zero double-counting** when aggregating. |
 | **Core Fact** | `fact_table_usage` | Incremental (Iceberg) | 1 query x 1 referenced table | Table-level cost attribution using proportional (1/N) metrics. |
+| **Marts** | `mart_daily_team_usage` | Incremental (Iceberg) | 1 day x 1 team | Pre-aggregated daily metrics for instant FinOps dashboard chargeback and SLA tracking. |
+| **Marts** | `mart_daily_table_usage` | Incremental (Iceberg) | 1 day x 1 table | Daily table usage with native Trino HyperLogLog (HLL) sketches for non-additive distinct user rollups. |
 
 ---
 
