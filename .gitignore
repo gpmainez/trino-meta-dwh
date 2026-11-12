@@ -22,3 +22,6 @@ meta_dwh/perf_info.json
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local Study Notes (Not committed)
+KOMPENDIUM_WIEDZY_META_DWH.md
