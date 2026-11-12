@@ -67,8 +67,11 @@ The platform processes telemetry emitted by Trino's `EventListener` (`QueryCompl
 * **The Solution:** We maintain two separate fact tables:
   1. `fact_query_execution`: Preserves the true, unadjusted cost of each query. Ideal for CFO / cluster-level billing and team-level rollups.
   2. `fact_table_usage`: Distributes query resources proportionally among referenced tables using:
-     $$\text{cost\_allocation\_factor} = \frac{1.0}{\text{tables\_queried\_count}}$$
-     $$\text{allocated\_cpu\_time\_ms} = \text{round}(\text{cpu\_time\_ms} \times \text{cost\_allocation\_factor})$$
+     ```text
+     cost_allocation_factor = 1.0 / tables_queried_count
+     allocated_cpu_time_ms = round(cpu_time_ms * cost_allocation_factor)
+     allocated_bytes_scanned = round(bytes_scanned * cost_allocation_factor)
+     ```
   This guarantees mathematical consistency: summing allocated CPU for a single query across its tables equals the exact total query CPU.
 
 ### B. Apache Iceberg on Amazon S3
@@ -182,7 +185,9 @@ To elevate the Meta DWH from basic observability to a full-fledged enterprise Fi
 📁 [analyses/query_efficiency_finops.sql](analyses/query_efficiency_finops.sql)
 
 Evaluates the **Parallelism Factor**:
-$$\text{parallelism\_factor} = \frac{\text{cpu\_time\_ms}}{\text{duration\_ms}}$$
+```text
+parallelism_factor = cpu_time_ms / duration_ms
+```
 Detects sequential execution bottlenecks (queries with high CPU but parallelism $\approx 1.0$), identifying unpartitioned cartesian joins and poorly tuned execution plans.
 
 ---
